@@ -1,6 +1,8 @@
 from functools import wraps
 from flask import Flask, g, redirect, request, Response, render_template, url_for
 from pyres import ResQ, failure
+import argparse
+
 
 from resweb.views import (
     Overview,
@@ -284,6 +286,18 @@ def delayed_timestamp(timestamp):
     return render_template('delayed_timestamp.html', data=data)
 
 def main():
-    app.run(host=app.config['SERVER_HOST'], port=int(app.config['SERVER_PORT']), debug=True)
+    parser = argparse.ArgumentParser(description='Optional app description')
+    parser.add_argument('--redishost', type=str, help='Set redis host:port')
+    parser.add_argument('--redispass', type=str, help='Set redis password')
+    parser.add_argument('--host', type=str, help='Set server host')
+    parser.add_argument('--port', type=int, help='Set server port')
+    args = parser.parse_args()
+    app.config['SERVER_PORT'] = args.port or int(app.config.get('SERVER_PORT', 5001))
+    app.config['SERVER_HOST'] = args.host or app.config.get('SERVER_HOST', "127.0.0.1")
+    app.config['RESWEB_HOST'] = args.redishost or app.config.get('RESWEB_HOST', "127.0.0.1:6379")
+    app.config['RESWEB_PASSWORD'] = args.redispass or app.config.get('RESWEB_PASSWORD', None)
+    
+    # Required positional argument
+    app.run(host=app.config['SERVER_HOST'], port=app.config['SERVER_PORT'], debug=True)
 if __name__ == '__main__':
     main()
